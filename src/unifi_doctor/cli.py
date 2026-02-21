@@ -152,11 +152,12 @@ def setup(
     async def _discover():
         async with client:
             devices = await client.get_devices()
-            return [d for d in devices if d.is_ap]
+            aps = [d for d in devices if d.is_ap]
+            return aps, devices
 
     try:
-        aps = _run_async(_discover())
-        run_interview(aps)
+        aps, devices = _run_async(_discover())
+        run_interview(aps, devices)
     except Exception as e:
         console.print(f"[red]Failed to connect: {e}[/red]")
         console.print("[yellow]Config saved — fix connection and re-run setup.[/yellow]")
@@ -381,6 +382,39 @@ def export(
     else:
         Path(output).write_text(json_str)
         console.print(f"[green]Exported to {output}[/green]")
+
+
+@app.command()
+def topology(
+    live: bool = typer.Option(False, "--live", "-l", help="Overlay live client counts per AP"),
+    verify_ssl: bool = typer.Option(False, "--verify-ssl"),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+    output_json: bool = typer.Option(False, "--json", help="Output as JSON"),
+):
+    """Show ASCII topology map of AP positions."""
+    from unifi_doctor.output.topology_output import print_topology_map, topology_to_json
+
+    topo = load_topology()
+
+    if not topo.placements:
+        console.print("[yellow]No topology configured. Run 'unifi-doctor setup' first.[/yellow]")
+        raise typer.Exit(1)
+
+    client_counts: dict[str, int] | None = None
+
+    if live:
+        client = _get_client(verify_ssl=verify_ssl, verbose=verbose)
+        snapshot = _run_async(_fetch_snapshot(client))
+        client_counts = {}
+        for ap in snapshot.aps:
+            wireless = [c for c in snapshot.clients_for_ap(ap.mac) if not c.is_wired]
+            client_counts[ap.mac] = len(wireless)
+
+    if output_json:
+        data = topology_to_json(topo, client_counts=client_counts)
+        console.print_json(json.dumps(data, indent=2, default=str))
+    else:
+        print_topology_map(topo, client_counts=client_counts)
 
 
 def main():

@@ -61,6 +61,39 @@ Each module in `analysis/` is a pure function — no class state:
 
 User config and topology persist to `~/.unifi-doctor/config.yaml` and `~/.unifi-doctor/topology.yaml`. Env-var overrides: `UNIFI_HOST`, `UNIFI_USER`, `UNIFI_PASS`.
 
+## Protocol-Driven Development
+
+`docs/PROTOCOL.md` is the authoritative specification for this project. All behavioral code changes must be validated against it.
+
+### What the Protocol governs
+
+- API endpoints, request/response shapes, and authentication flow
+- Pydantic model fields and wire-format schemas
+- Analysis thresholds and rule constants (in `analysis/rules.py`)
+- CLI commands, flags, and output formats
+- Diagnostic output schemas (Finding, ChannelPlan, Severity, Band)
+- Channel planning algorithm logic
+- Streaming device identification (OUI prefixes, hostname keywords)
+- Configuration and topology file formats
+- Error handling behavior
+
+### Workflow for code changes
+
+1. **Before making a behavioral change**, check `docs/PROTOCOL.md` for the relevant section.
+2. **If the code change matches the Protocol** — proceed normally.
+3. **If the code change conflicts with the Protocol** — stop and prompt the operator:
+   - Explain the conflict (what the Protocol says vs. what the change would do).
+   - Ask whether to (a) adjust the code to match the Protocol, or (b) update the Protocol to reflect the new intent.
+   - If updating the Protocol, capture the reason and make the Protocol edit **before or alongside** the code change.
+4. **If the change introduces new behavior not covered by the Protocol** — prompt the operator and add the new behavior to the Protocol.
+
+### What does NOT require Protocol validation
+
+- Internal refactors that don't change external behavior (renaming private helpers, restructuring imports)
+- Test-only changes
+- Documentation outside `PROTOCOL.md` (README, comments)
+- Dependency updates that don't alter behavior
+
 ## Conventions
 
 - `from __future__ import annotations` used in all modules

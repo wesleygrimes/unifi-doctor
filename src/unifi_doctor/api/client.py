@@ -68,7 +68,7 @@ def load_topology() -> Topology:
 def save_topology(topo: Topology) -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     CONFIG_DIR.chmod(0o700)
-    TOPOLOGY_FILE.write_text(yaml.dump(topo.model_dump(), default_flow_style=False))
+    TOPOLOGY_FILE.write_text(yaml.dump(topo.model_dump(mode="json"), default_flow_style=False))
 
 
 class UniFiClient:

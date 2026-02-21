@@ -73,10 +73,6 @@ def analyze(snapshot: NetworkSnapshot, topology: Topology) -> tuple[list[Finding
 
     # Build placement lookup
     placement_map = {p.mac: p for p in topology.placements}
-    link_map: dict[tuple[str, str], float] = {}
-    for link in topology.links:
-        link_map[(link.ap1_mac, link.ap2_mac)] = link.distance_ft
-        link_map[(link.ap2_mac, link.ap1_mac)] = link.distance_ft
 
     # Collect per-AP channel info
     ap_channels_2g: dict[str, int] = {}

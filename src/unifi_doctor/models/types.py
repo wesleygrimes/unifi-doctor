@@ -6,7 +6,7 @@ import enum
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -87,6 +87,20 @@ class Topology(BaseModel):
     links: list[APLink] = Field(default_factory=list)
 
 
+class APCoordinate(BaseModel):
+    mac: str
+    name: str
+    floor: FloorLevel = FloorLevel.GROUND
+    x: float = 0.0
+    y: float = 0.0
+    client_count: int | None = None
+
+
+class TopologyMapResult(BaseModel):
+    nodes: list[APCoordinate] = Field(default_factory=list)
+    links: list[APLink] = Field(default_factory=list)
+
+
 # ---------------------------------------------------------------------------
 # API Response Models (loose – extra fields allowed)
 # ---------------------------------------------------------------------------
@@ -108,6 +122,11 @@ class RadioTableEntry(BaseModel, extra="allow"):
     satisfaction: int = 100
     noise_floor: int = -100  # Added for noise floor checks
 
+    @field_validator("satisfaction", mode="before")
+    @classmethod
+    def _coerce_satisfaction(cls, v: Any) -> int:
+        return v if v is not None else 100
+
 
 class RadioTableStatsEntry(BaseModel, extra="allow"):
     name: str = ""
@@ -118,6 +137,11 @@ class RadioTableStatsEntry(BaseModel, extra="allow"):
     noise_floor: int = -100  # Added for noise floor checks
     satisfaction: int = 100
     num_sta: int = 0
+
+    @field_validator("satisfaction", mode="before")
+    @classmethod
+    def _coerce_satisfaction(cls, v: Any) -> int:
+        return v if v is not None else 100
 
 
 class PortTableEntry(BaseModel, extra="allow"):
@@ -159,6 +183,11 @@ class DeviceInfo(BaseModel, extra="allow"):
     mesh_sta_vap_enabled: bool = False
     uplink_type: str = ""  # "wire" or "wireless"
 
+    @field_validator("satisfaction", mode="before")
+    @classmethod
+    def _coerce_satisfaction(cls, v: Any) -> int:
+        return v if v is not None else 100
+
     @property
     def is_ap(self) -> bool:
         return self.type in ("uap",)
@@ -199,6 +228,11 @@ class ClientInfo(BaseModel, extra="allow"):
     roam_count: int = 0
     uptime: int = 0
     last_seen: int = 0
+
+    @field_validator("satisfaction", mode="before")
+    @classmethod
+    def _coerce_satisfaction(cls, v: Any) -> int:
+        return v if v is not None else 100
 
     @property
     def display_name(self) -> str:
